@@ -8,7 +8,7 @@ DISPLAY_ID = ':0'
 
 def generate_xauthority():
     with tempfile.NamedTemporaryFile() as f:
-        subprocess.check_call(['xauth', '-f', f.name, 'generate', DISPLAY_ID, 'MIT-MAGIC-COOKIE-1']) # + ['untrusted']
+        subprocess.check_call(['xauth', '-f', f.name, 'generate', DISPLAY_ID, 'MIT-MAGIC-COOKIE-1', 'trusted']) # + ['untrusted']
         return open(f.name, 'rb').read()
 
 def update_container(self):
@@ -27,3 +27,4 @@ def update_container_def(self, definition):
             'path': '/tmp/.X11-unix',
             'source': '/tmp/.X11-unix'
         }
+        definition['config']['environment.DISPLAY'] = DISPLAY_ID

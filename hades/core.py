@@ -4,6 +4,7 @@ import yaml
 import subprocess
 import time
 import platform
+import pwd
 
 from pylxd import api
 from .common import valid_name
@@ -17,11 +18,18 @@ INTERNAL_GID = 200000
 plugins = []
 
 class User:
-    def __init__(self, name, uid):
+    def __init__(self, name):
+        entry = pwd.getpwnam(name)
         self.name = name
-        self.uid = uid
-        self.gid = uid
+        self.uid = entry.pw_uid
+        self.gid = entry.pw_gid
+        self.home = entry.pw_dir
         assert '-' not in name and valid_name(name)
+
+def call_plugins(name, *args):
+    for plugin in plugins:
+        if hasattr(plugin, name):
+            getattr(plugin, name)(*args)
 
 class Profile:
     def __init__(self, user, name):
@@ -45,8 +53,7 @@ class Profile:
         self.update_inner_user()
         self.update_hostname()
 
-        for plugin in plugins:
-            plugin.update_container(self)
+        call_plugins('update_container', self)
 
     def start_container(self):
         if not lxd.container_running(self.container_name):
@@ -69,6 +76,8 @@ class Profile:
             time.sleep(0.5)
 
     def update_inner_user(self):
+        config = self.get_config()
+
         passwd = lxd.get_container_file(self.container_name, '/etc/passwd').decode('utf8')
         users = [ line.split(':')[0] for line in passwd.splitlines() ]
 
@@ -77,8 +86,11 @@ class Profile:
             # self.run_command(['groupdel', 'ubuntu'])
 
         if self.user.name not in users:
-            self.run_command(['groupadd', '--gid', str(self.user.gid), self.user.name])
-            self.run_command(['useradd', '--create-home', '--uid', str(self.user.uid), '--gid', str(self.user.gid), self.user.name])
+            self.run_command(['groupadd', '--gid', str(INTERNAL_GID), self.user.name])
+            self.run_command(['useradd', '--create-home', '--uid', str(INTERNAL_UID), '--gid', str(INTERNAL_GID), self.user.name])
+
+        self.run_command(['chsh', '--shell', config.get('shell', '/bin/bash'), self.user.name])
+        self.run_command(['chown', '%d:%d' % (INTERNAL_UID, INTERNAL_GID), '--', self.user.home])
 
         config = self.get_config()
         self.put_file('/etc/sudoers.d/hades-sudo',
@@ -98,16 +110,27 @@ class Profile:
             lxd.put_container_file(self.container_name, f.name, path, uid=uid, gid=gid, mode=mode)
 
     def update_definition(self):
-        definition = lxd.container_info(self.container_name)
+        definition = lxd.get_container_config(self.container_name)
+        definition = {
+            'name': definition['name'],
+            'profiles': definition['profiles'],
+            'config': definition['config'],
+            'devices': definition['devices'],
+            'ephemeral': definition['ephemeral'],
+        }
         self.update_container_def(definition)
-        print(definition)
-        lxd.container_update(self.container_name, definition)
+
+        with tempfile.NamedTemporaryFile() as f:
+            f.write(yaml.safe_dump(definition).encode())
+            f.seek(0)
+            subprocess.check_call(['lxc', 'config', 'edit', '--', self.container_name], stdin=f)
 
     def update_container_def(self, definition):
         config = self.get_config()
-        definition['config'] = {
-            'raw.lxc': '''lxc.id_map = u %d %d 1\nlxc.id_map = g %d %d 1''' % (INTERNAL_UID, self.user.uid, INTERNAL_GID, self.user.gid)
-        }
+        definition['config'].update({
+            'raw.lxc': '''lxc.id_map = u %d %d 1\nlxc.id_map = g %d %d 1''' % (INTERNAL_UID, self.user.uid, INTERNAL_GID, self.user.gid),
+            'environment.HADES_PROFILE': self.name,
+        })
 
         definition['devices'] = {
             'root': {'type': 'disk', 'path': '/'},
@@ -118,11 +141,25 @@ class Profile:
             'kvm': {'type': 'unix-char', 'path': '/dev/kvm'},
         }
 
-        for plugin in plugins:
-            plugin.update_container_def(self, definition)
+        call_plugins('update_container_def', self, definition)
+
+    def execute(self, args):
+        # Execute command as user in the container
+        cmd = ['lxc', 'exec', '--', self.container_name, 'sudo', '-EH', '-u', self.user.name]
+        if args:
+            cmd += ['--'] + args
+        else:
+            cmd += ['-i']
+        return subprocess.call(cmd)
+
+def load_plugins():
+    from . import storage
+    from . import x11
+    from . import initxyz
+    plugins.append(storage)
+    plugins.append(x11)
+    plugins.append(initxyz)
 
 if __name__ == '__main__':
-    from . import x11
-    plugins.append(x11)
     import sys
-    Profile(user=User(name='michal', uid=1000), name=sys.argv[1]).update_container()
+    Profile(user=User(name='michal'), name=sys.argv[1]).update_container()
