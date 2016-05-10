@@ -12,6 +12,7 @@ from .common import valid_name
 lxd = api.API()
 
 CONF_PATH = os.path.abspath(os.environ.get('HADES_CONF', 'conf'))
+RUN_PATH = os.path.abspath(os.environ.get('HADES_RUN', 'run'))
 INTERNAL_UID = 200000
 INTERNAL_GID = 200000
 
@@ -155,9 +156,11 @@ class Profile:
 def load_plugins():
     from . import storage
     from . import x11
+    from . import shell_launcher
     from . import initxyz
     plugins.append(storage)
     plugins.append(x11)
+    plugins.append(shell_launcher)
     plugins.append(initxyz)
 
 if __name__ == '__main__':

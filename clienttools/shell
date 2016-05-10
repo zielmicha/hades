@@ -1,0 +1,22 @@
+#!/usr/bin/env python2
+import socket
+import passfd
+import tty
+import signal
+
+s = socket.socket(socket.AF_UNIX)
+s.connect('/opt/hadeshost/shell.socket')
+passfd.sendfd(s, 0)
+
+def send_resize(*_):
+    s.sendall('R')
+
+signal.signal(signal.SIGWINCH, send_resize)
+
+while True:
+    try:
+        s.recv(4096)
+        break
+    except socket.error as err:
+        if err.errno != 4:
+            break

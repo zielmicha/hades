@@ -21,5 +21,5 @@ def update_container_def(self, definition):
             'type': 'disk',
             'path': path,
             'source': source,
-            #'readonly': 'true' if (conf.get('readonly')) else 'false'
+            'readonly': 'true' if (conf.get('readonly')) else 'false'
         }
