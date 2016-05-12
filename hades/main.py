@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 subcommands = parser.add_subparsers(dest='command')
 
 exec_parser = subcommands.add_parser('exec')
+exec_parser.add_argument('--update', action='store_true', default=False)
 exec_parser.add_argument('user')
 exec_parser.add_argument('profile')
 exec_parser.add_argument('args', nargs='*')
@@ -39,7 +40,10 @@ if ns.command == 'update':
 elif ns.command == 'exec':
     check_user(ns.user)
 
-    exit = core.Profile(user=core.User(name=ns.user), name=ns.profile).execute(ns.args)
+    profile = core.Profile(user=core.User(name=ns.user), name=ns.profile)
+    if ns.update:
+        profile.update_container()
+    exit = profile.execute(ns.args)
     sys.exit(exit)
 elif ns.command == 'shell':
     check_user(ns.user)

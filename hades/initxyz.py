@@ -8,7 +8,7 @@ def update_container(self):
         self.execute([bin, 'init', self.user.home + '/configs.xyz'])
         for profile in config['profiles']: # TODO: disable
             self.execute([bin, 'enable', profile])
-        self.execute([bin, 'reload', '--silent'])
+        # self.execute([bin, 'reload', '--silent'])
 
 def update_container_def(self, definition):
     config = self.get_config()

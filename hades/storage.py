@@ -3,6 +3,8 @@ from . import core
 def expanduser(self, path):
     if path.startswith('~/'):
         return self.user.home + '/' + path[2:]
+    else:
+        return path
 
 def update_container(self):
     config = self.get_config()

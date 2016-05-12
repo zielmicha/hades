@@ -7,6 +7,7 @@ import signal
 
 def run(user, session_id):
     os.environ['HADES_AS_USER'] = user.name
+    os.environ['TERM'] = 'xterm' # TODO: get TERM from client
 
     signal.signal(signal.SIGTSTP, signal.SIG_IGN)
     signal.signal(signal.SIGTTIN, signal.SIG_IGN)
@@ -36,13 +37,12 @@ def tick(user):
 
     command = args[0]
 
-    if command in ('update', ):
-        call_main(user, args)
+    if command in ('update', 'upd', 'u'):
+        call_main(user, ['update'] + args[1:])
     elif command in ('exec', 'e'):
         if call_main(user, ['exec', '--'] + args[1:]) == 0:
             sys.exit(0)
     elif command == 'root':
         subprocess.call(['bash'], cwd='/root')
-        sys.exit(0)
     else:
         print('Invalid command.')

@@ -12,7 +12,7 @@ from .common import valid_name
 lxd = api.API()
 
 CONF_PATH = os.path.abspath(os.environ.get('HADES_CONF', 'conf'))
-RUN_PATH = os.path.abspath(os.environ.get('HADES_RUN', 'run'))
+RUN_PATH = os.path.abspath(os.environ.get('HADES_RUN', '/run/hades'))
 INTERNAL_UID = 200000
 INTERNAL_GID = 200000
 
@@ -95,7 +95,7 @@ class Profile:
 
         config = self.get_config()
         self.put_file('/etc/sudoers.d/hades-sudo',
-                      'Defaults !authenticate\n%s   ALL=(ALL:ALL) ALL' % self.user.name if config.get('sudo') == 'allow' else '')
+                      'Defaults !authenticate\nDefaults env_keep += "HADES_PROFILE"\n%s   ALL=(ALL:ALL) ALL' % self.user.name if config.get('sudo') == 'allow' else '')
 
     def update_hostname(self):
         hostname = platform.node()
@@ -129,7 +129,7 @@ class Profile:
     def update_container_def(self, definition):
         config = self.get_config()
         definition['config'].update({
-            'raw.lxc': '''lxc.id_map = u %d %d 1\nlxc.id_map = g %d %d 1''' % (INTERNAL_UID, self.user.uid, INTERNAL_GID, self.user.gid),
+            'raw.lxc': '''lxc.id_map = u %d %d 1\nlxc.id_map = g %d %d 1\nlxc.aa_allow_incomplete = 1''' % (INTERNAL_UID, self.user.uid, INTERNAL_GID, self.user.gid),
             'environment.HADES_PROFILE': self.name,
         })
 
@@ -155,10 +155,12 @@ class Profile:
 
 def load_plugins():
     from . import storage
+    from . import locale
     from . import x11
     from . import shell_launcher
     from . import initxyz
     plugins.append(storage)
+    plugins.append(locale)
     plugins.append(x11)
     plugins.append(shell_launcher)
     plugins.append(initxyz)

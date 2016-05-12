@@ -47,8 +47,12 @@ def main(user, profile):
         fd, msg = passfd.recvfd(child)
         command = ['python3', '-m', 'hades.main', 'shell',
                    '--session-id', session_id, user]
+        def preexec():
+            # make process group, script sometimes does kill(0, TERM)
+            os.setpgrp()
+
         proc = subprocess.Popen(
-            wrap_in_pty(command), stdin=fd, stdout=fd, stderr=fd)
+            wrap_in_pty(command), stdin=fd, stdout=fd, stderr=fd, preexec_fn=preexec)
         os.close(fd)
         threading.Thread(target=handle_resize, args=[child, proc]).start()
         proc.wait()
