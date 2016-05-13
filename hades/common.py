@@ -1,4 +1,5 @@
 import string
+import os
 
 def valid_name(s):
     if s.startswith('-') or s.startswith('.'):
@@ -7,3 +8,7 @@ def valid_name(s):
         raise ValueError('bad name %r' % s)
 
     return True
+
+def maybe_mkdir(path):
+    if not os.path.exists(path):
+        os.mkdir(path)

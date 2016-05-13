@@ -158,11 +158,13 @@ def load_plugins():
     from . import locale
     from . import x11
     from . import shell_launcher
+    from . import sound
     from . import initxyz
     plugins.append(storage)
     plugins.append(locale)
     plugins.append(x11)
     plugins.append(shell_launcher)
+    plugins.append(sound)
     plugins.append(initxyz)
 
 if __name__ == '__main__':
