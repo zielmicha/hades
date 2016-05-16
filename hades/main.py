@@ -41,7 +41,7 @@ elif ns.command == 'exec':
     check_user(ns.user)
 
     profile = core.Profile(user=core.User(name=ns.user), name=ns.profile)
-    if ns.update:
+    if ns.update or not profile.is_running():
         profile.update_container()
     exit = profile.execute(ns.args)
     sys.exit(exit)

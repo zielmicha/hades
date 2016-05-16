@@ -56,6 +56,9 @@ class Profile:
 
         call_plugins('update_container', self)
 
+    def is_running(self):
+        return lxd.container_running(self.container_name)
+
     def start_container(self):
         if not lxd.container_running(self.container_name):
             lxd.container_start(self.container_name, timeout=15)
@@ -100,6 +103,9 @@ class Profile:
     def update_hostname(self):
         hostname = platform.node()
         self.run_command(['hostname', '--', hostname])
+        hosts = lxd.get_container_file(self.container_name, '/etc/hosts').decode('utf8')
+        hosts = '\n'.join([ line for line in hosts.splitlines() if not '# HADES HOSTNAME' in line ])
+        self.put_file('/etc/hosts', '127.0.0.1   ' + hostname + ' # HADES HOSTNAME\n' + hosts)
 
     def run_command(self, args):
         subprocess.check_call(['lxc', 'exec', self.container_name, '--'] + args)

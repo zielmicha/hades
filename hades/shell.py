@@ -40,8 +40,10 @@ def tick(user):
     if command in ('update', 'upd', 'u'):
         call_main(user, ['update'] + args[1:])
     elif command in ('exec', 'e'):
-        if call_main(user, ['exec', '--'] + args[1:]) == 0:
+        if call_main(user, ['exec', '--'] + args[1:]) == 0 and not args:
             sys.exit(0)
+        else:
+            print
     elif command == 'root':
         subprocess.call(['bash'], cwd='/root')
     else:
