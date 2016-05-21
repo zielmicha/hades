@@ -38,3 +38,12 @@ def update_container_def(self, definition):
             'source': '/tmp/.X11-unix'
         }
         definition['config']['environment.DISPLAY'] = DISPLAY_ID
+
+def add_parsers(addf):
+    sub = addf('runx')
+    sub.add_argument('user')
+
+def call_main(ns):
+    if ns.command == 'runx':
+        from . import runx
+        runx.main(core.User(name=ns.user))

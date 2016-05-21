@@ -156,11 +156,8 @@ class Profile:
 
     def execute(self, args):
         # Execute command as user in the container
-        cmd = ['lxc', 'exec', '--', self.container_name, 'sudo', '-EH', '-u', self.user.name]
-        if args:
-            cmd += ['--'] + args
-        else:
-            cmd += ['-i']
+        cmd = ['lxc', 'exec', '--', self.container_name, '/hades/tools/bin/hades-runas', self.user.name]
+        cmd += args
         return subprocess.call(cmd)
 
     def get_container_info(self):
@@ -185,6 +182,8 @@ def load_plugins():
     from . import shell_launcher
     from . import sound
     from . import initxyz
+    from . import shell
+    from . import base
     plugins.append(storage)
     plugins.append(net)
     plugins.append(locale)
@@ -192,6 +191,8 @@ def load_plugins():
     plugins.append(shell_launcher)
     plugins.append(sound)
     plugins.append(initxyz)
+    plugins.append(shell)
+    plugins.append(base)
 
 if __name__ == '__main__':
     import sys

@@ -20,7 +20,7 @@ def wait_for_x():
 
 def main(user):
     xauth_path = core.RUN_PATH + '/xauth.' + DISPLAY_ID
-    x_command = ['python3', '-m', 'hades.main', 'exec', '--update', user.name, 'gui', 'i3']
+    x_command = ['python3', '-m', 'hades.main', 'exec', '--update', user.name, 'gui', 'hades-run-gui']
     print(x_command)
     subprocess.call(['rm', xauth_path])
     subprocess.check_call(['xauth', '-f', xauth_path, 'add',

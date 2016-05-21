@@ -1,4 +1,5 @@
 from . import core
+from .core import call_plugins
 
 core.load_plugins()
 
@@ -14,48 +15,20 @@ def check_user(name):
 parser = argparse.ArgumentParser()
 subcommands = parser.add_subparsers(dest='command')
 
-exec_parser = subcommands.add_parser('exec')
-exec_parser.add_argument('--update', action='store_true', default=False)
-exec_parser.add_argument('user')
-exec_parser.add_argument('profile')
-exec_parser.add_argument('args', nargs='*')
+available_commands = []
 
-update_parser = subcommands.add_parser('update')
-update_parser.add_argument('user')
-update_parser.add_argument('profile')
+def add_parser(name):
+    available_commands.append(name)
+    return subcommands.add_parser(name)
 
-shell_parser = subcommands.add_parser('shell')
-shell_parser.add_argument('user')
-shell_parser.add_argument('--session-id', default=None)
-
-shellserver_parser = subcommands.add_parser('shell-server')
-shellserver_parser.add_argument('user')
-shellserver_parser.add_argument('profile')
-
-runx_parser = subcommands.add_parser('runx')
-runx_parser.add_argument('user')
+call_plugins('add_parsers', add_parser)
 
 ns = parser.parse_args()
-if ns.command == 'update':
+
+if ns.user:
     check_user(ns.user)
 
-    core.Profile(user=core.User(name=ns.user), name=ns.profile).update_container()
-elif ns.command == 'exec':
-    check_user(ns.user)
+call_plugins('call_main', ns)
 
-    profile = core.Profile(user=core.User(name=ns.user), name=ns.profile)
-    if ns.update or not profile.is_running():
-        profile.update_container()
-    exit = profile.execute(ns.args)
-    sys.exit(exit)
-elif ns.command == 'shell':
-    check_user(ns.user)
-    from . import shell
-    shell.run(core.User(name=ns.user), ns.session_id)
-elif ns.command == 'shell-server':
-    os.execvp('python2', ['python2', '-m', 'hades.shell_server', ns.user, ns.profile])
-elif ns.command == 'runx':
-    from . import runx
-    runx.main(core.User(name=ns.user))
-else:
+if ns.command not in available_commands:
     parser.print_usage()

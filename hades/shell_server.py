@@ -46,8 +46,7 @@ def main(user, profile):
 
     def handle_client(child):
         fd, msg = passfd.recvfd(child)
-        command = ['python3', '-m', 'hades.main', 'shell',
-                   '--session-id', session_id, user]
+        command = ['hades', 'shell', '--session-id', session_id, user]
         def preexec():
             # make process group, script sometimes does kill(0, TERM)
             os.setpgrp()

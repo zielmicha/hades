@@ -3,10 +3,17 @@ import socket
 import passfd
 import tty
 import signal
+import sys
+import pipes
 
 s = socket.socket(socket.AF_UNIX)
 s.connect('/hades/run/host/shell.socket')
-passfd.sendfd(s, 0)
+args = sys.argv[1:]
+if args:
+    msg = 'exec ' + ' '.join(map(pipes.quote, args))
+else:
+    msg = 'interactive'
+passfd.sendfd(s, 0, message=msg)
 
 def send_resize(*_):
     s.sendall('R')
