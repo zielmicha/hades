@@ -139,6 +139,8 @@ class Profile:
             'environment.HADES_PROFILE': self.name,
         })
 
+        definition['profiles'] = []
+
         definition['devices'] = {
             'root': {'type': 'disk', 'path': '/'},
             'eth0': {'name': 'eth0', 'nictype': 'bridged', 'parent': 'lxdbr0', 'type': 'nic'},
@@ -146,6 +148,7 @@ class Profile:
             # give container a few useful devices, they anyway won't be usable without "sudo: allow"
             'tun': {'type': 'unix-char', 'path': '/dev/net/tun'},
             'kvm': {'type': 'unix-char', 'path': '/dev/kvm'},
+            'fuse': {'type': 'unix-char', 'path': '/dev/fuse'}, # requires kernel patch to support user ns
         }
 
         call_plugins('update_container_def', self, definition)
@@ -159,14 +162,30 @@ class Profile:
             cmd += ['-i']
         return subprocess.call(cmd)
 
+    def get_container_info(self):
+        return lxd.container_info(self.container_name)
+
+def all_profiles(user):
+    dir = CONF_PATH + '/profiles_' + user.name
+    names = os.listdir(dir)
+    result = []
+    for name in names:
+        if not name.endswith('.yml'):
+            continue
+        profile_name = name.rsplit('.', 1)[0]
+        result.append(Profile(user, profile_name))
+    return result
+
 def load_plugins():
     from . import storage
+    from . import net
     from . import locale
     from . import x11
     from . import shell_launcher
     from . import sound
     from . import initxyz
     plugins.append(storage)
+    plugins.append(net)
     plugins.append(locale)
     plugins.append(x11)
     plugins.append(shell_launcher)
