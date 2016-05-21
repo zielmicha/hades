@@ -15,9 +15,10 @@ def wrap_in_pty(command):
     ]
 
 def main(user, profile):
+    os.environ.setdefault('HOME', '/root') # for LXC
     session_id = os.urandom(12).encode('hex')
 
-    directory = os.environ.get('HADES_RUN', 'run') + '/profile-%s-%s' % (user, profile)
+    directory = os.environ.get('HADES_RUN', '/run/hades') + '/profile-%s-%s' % (user, profile)
     try:
         os.mkdir(directory)
     except OSError:

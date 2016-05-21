@@ -67,6 +67,7 @@ class Profile:
             if lxd.container_running(self.container_name):
                 return
             time.sleep(0.5)
+        raise ValueError('failed to start container %s' % self.container_name)
 
     def launch_container(self):
         config = self.get_config()

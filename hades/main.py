@@ -32,6 +32,9 @@ shellserver_parser = subcommands.add_parser('shell-server')
 shellserver_parser.add_argument('user')
 shellserver_parser.add_argument('profile')
 
+runx_parser = subcommands.add_parser('runx')
+runx_parser.add_argument('user')
+
 ns = parser.parse_args()
 if ns.command == 'update':
     check_user(ns.user)
@@ -47,10 +50,12 @@ elif ns.command == 'exec':
     sys.exit(exit)
 elif ns.command == 'shell':
     check_user(ns.user)
-
     from . import shell
     shell.run(core.User(name=ns.user), ns.session_id)
 elif ns.command == 'shell-server':
     os.execvp('python2', ['python2', '-m', 'hades.shell_server', ns.user, ns.profile])
+elif ns.command == 'runx':
+    from . import runx
+    runx.main(core.User(name=ns.user))
 else:
     parser.print_usage()

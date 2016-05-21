@@ -61,7 +61,7 @@ def update_container_def(self, definition):
 
     definition['devices']['pulse'] = {
         'type': 'disk',
-        'path': '/opt/hadespulse',
+        'path': '/hades/run/pulse',
         'source': os.path.dirname(get_socket_path(self))
     }
-    definition['config']['environment.PULSE_SERVER'] = 'unix:/opt/hadespulse/pulseaudio.socket'
+    definition['config']['environment.PULSE_SERVER'] = 'unix:/hades/run/pulse/pulseaudio.socket'

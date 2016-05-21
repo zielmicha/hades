@@ -55,6 +55,7 @@ def update_container_def(self, definition):
 
         target_dev = 'profile%d' % id
         master_profile = get_net_master(self)
+        master_profile.update_container()
         master_info = master_profile.get_container_info()
         if target_dev not in master_info['network']:
             move_link_to(dev_name + 'P', master_info['pid'], target_dev)

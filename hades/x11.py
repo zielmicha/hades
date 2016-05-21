@@ -17,6 +17,10 @@ def generate_xauthority(trusted):
 def update_container(self):
     config = self.get_config()
 
+    if not os.path.exists('/tmp/.X11-unix/X' + DISPLAY_ID[1:]):
+        # X11 not running
+        return
+
     # TODO: restricted tokens
     if config.get('x11'):
         if config.get('x11') == 'unrestricted':

@@ -5,7 +5,7 @@ import tty
 import signal
 
 s = socket.socket(socket.AF_UNIX)
-s.connect('/opt/hadeshost/shell.socket')
+s.connect('/hades/run/host/shell.socket')
 passfd.sendfd(s, 0)
 
 def send_resize(*_):
