@@ -11,6 +11,11 @@ def update_container(self):
 
     net = config.get('net', {})
 
+    info = self.get_container_info()
+    if info['pid']:
+        for phy in net.get('wireless-phy', []):
+            subprocess.call(['iw', 'phy', phy, 'set', 'netns', str(info['pid'])])
+
 def ensure_veth(name, mac):
     if not os.path.exists('/sys/class/net/' + name) and not os.path.exists('/sys/class/net/' + name + 'P'):
         subprocess.check_call(['ip', 'link', 'add', 'dev', name, 'type', 'veth', 'peer', 'name', (name + 'P')])
@@ -46,6 +51,7 @@ def update_container_def(self, definition):
             'parent': dev_name + 'P',
         }
     else:
+        # TODO: moving interfaces should happen in update_container
         dev_name = veth_for(self)
         info = self.get_container_info()
         id = self.get_config()['id']
