@@ -27,6 +27,8 @@ def main(user):
                      DISPLAY_ID, 'MIT-MAGIC-COOKIE-1', rand_cookie()])
     xorg = subprocess.Popen(['X', DISPLAY_ID, '-auth', xauth_path, '-nolisten', 'tcp', '-novtswitch'])
     wait_for_x()
+    with open(core.RUN_PATH + '/x11-user', 'w') as f:
+        f.write(user.name + '\n')
     subprocess.check_call(x_command)
 
 

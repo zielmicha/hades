@@ -43,7 +43,20 @@ def add_parsers(addf):
     sub = addf('runx')
     sub.add_argument('user')
 
+    sub = addf('guiexec')
+    sub.add_argument('args', nargs='+')
+    sub.add_argument('--update', action='store_true', default=False)
+
+def get_gui_user():
+    username = open(core.RUN_PATH + '/x11-user', 'r').read().strip()
+    return core.User(username)
+
 def call_main(ns):
     if ns.command == 'runx':
         from . import runx
         runx.main(core.User(name=ns.user))
+    elif ns.command == 'guiexec':
+        profile = core.Profile(user=get_gui_user(), name='gui')
+        if ns.update or not profile.is_running():
+            profile.update_container()
+        profile.execute(ns.args)

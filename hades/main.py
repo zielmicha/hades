@@ -25,7 +25,7 @@ call_plugins('add_parsers', add_parser)
 
 ns = parser.parse_args()
 
-if ns.user:
+if hasattr(ns, 'user'):
     check_user(ns.user)
 
 call_plugins('call_main', ns)

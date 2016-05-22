@@ -1,0 +1,10 @@
+[Unit]
+Description=hades-lock
+Before=sleep.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/hades guiexec hades-lock
+
+[Install]
+WantedBy=sleep.target
