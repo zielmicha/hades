@@ -143,6 +143,7 @@ class Profile:
             'raw.lxc': '''lxc.id_map = u %d %d 1\nlxc.id_map = g %d %d 1\nlxc.aa_allow_incomplete = 1''' % (INTERNAL_UID, self.user.uid, INTERNAL_GID, self.user.gid),
             'environment.HADES_PROFILE': self.name,
             'environment.LANG': 'en_US.UTF-8', # Read /etc/default/locale? Or use PAM to set this?
+            'environment.SHELL': config.get('shell', '/bin/bash'),
         })
 
         definition['profiles'] = []

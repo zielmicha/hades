@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import signal
+import yaml
 
 def call_main(ns): # plugin
     if ns.command == 'shell':
@@ -40,6 +41,14 @@ def run(user, session_id):
 def run_main(user, args):
     return subprocess.call(['python3', '-m', 'hades.main', args[0], user.name] + args[1:])
 
+def load_settings(user):
+    path = core.CONF_PATH + '/shell_%s.yml' % user.name
+    with open(path, 'r') as f:
+        return yaml.load(f)
+
+def check_auth(user, scope):
+    return True
+
 def tick(user):
     try:
         command_str = input('# ')
@@ -52,18 +61,26 @@ def tick(user):
     if not args:
         return
 
-    command = args[0]
+    settings = load_settings(user)
+    aliases = settings.get('aliases', {})
+    root_commands = settings.get('rootcommands', {})
 
-    if command in ('update', 'upd', 'u'):
-        run_main(user, ['update'] + args[1:])
-    elif command in ('exec', 'e'):
-        if run_main(user, ['exec', '--'] + args[1:]) == 0 and not args:
-            sys.exit(0)
-        else:
-            print
-    elif command == 'edit':
-        run_main(user, ['edit'] + args[1:])
-    elif command == 'root':
-        subprocess.call(['bash'], cwd='/root')
+    command = args[0]
+    builtin_profile_commands = ['update', 'exec']
+    builtin_root_commands = ['edit']
+
+    if command in aliases:
+        command = aliases[command]
+
+    if command in builtin_profile_commands:
+        if check_auth(user, 'root'):
+            run_main(user, [command] + args[1:])
+    elif command in builtin_root_commands:
+        if check_auth(user, 'root'):
+            run_main(user, [command] + args[1:])
+    elif command in root_commands:
+        if check_auth(user, 'root'):
+            cmd = root_commands[command]
+            subprocess.call(['bash', '-c', cmd, '--'] + args[1:])
     else:
-        print('Invalid command.')
+        print('Invalid command:', command)
