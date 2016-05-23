@@ -1,5 +1,6 @@
 from . import core
 import sys
+import subprocess
 
 def add_parsers(addf):
     sub = addf('exec')
@@ -12,6 +13,10 @@ def add_parsers(addf):
     sub.add_argument('user')
     sub.add_argument('profile')
 
+    sub = addf('edit')
+    sub.add_argument('user')
+    sub.add_argument('profile')
+
 def call_main(ns):
     if ns.command == 'update':
         core.Profile(user=core.User(name=ns.user), name=ns.profile).update_container()
@@ -21,3 +26,7 @@ def call_main(ns):
             profile.update_container()
         exit = profile.execute(ns.args)
         sys.exit(exit)
+    elif ns.command == 'edit':
+        profile = core.Profile(user=core.User(name=ns.user), name=ns.profile)
+        subprocess.call(['editor', profile.config_path])
+        profile.update_container()

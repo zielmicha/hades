@@ -61,6 +61,8 @@ def tick(user):
             sys.exit(0)
         else:
             print
+    elif command == 'edit':
+        run_main(user, ['edit'] + args[1:])
     elif command == 'root':
         subprocess.call(['bash'], cwd='/root')
     else:

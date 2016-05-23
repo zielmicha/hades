@@ -42,8 +42,12 @@ class Profile:
     def container_name(self):
         return self.user.name + '-' + self.name
 
+    @property
+    def config_path(self):
+        return os.path.join(CONF_PATH, 'profiles_%s' % self.user.name, self.name + '.yml')
+
     def get_config(self):
-        with open(os.path.join(CONF_PATH, 'profiles_%s' % self.user.name, self.name + '.yml')) as f:
+        with open(self.config_path) as f:
             return yaml.safe_load(f.read())
 
     def update_container(self):
@@ -138,6 +142,7 @@ class Profile:
         definition['config'].update({
             'raw.lxc': '''lxc.id_map = u %d %d 1\nlxc.id_map = g %d %d 1\nlxc.aa_allow_incomplete = 1''' % (INTERNAL_UID, self.user.uid, INTERNAL_GID, self.user.gid),
             'environment.HADES_PROFILE': self.name,
+            'environment.LANG': 'en_US.UTF-8', # Read /etc/default/locale? Or use PAM to set this?
         })
 
         definition['profiles'] = []
