@@ -19,6 +19,7 @@ def wait_for_x():
         raise OSError('X failed to start (%r not found)' % path)
 
 def main(user):
+    subprocess.call(['mkdir', '/run/hades'])
     xauth_path = core.RUN_PATH + '/xauth.' + DISPLAY_ID
     x_command = ['python3', '-m', 'hades.main', 'exec', '--update', user.name, 'gui', 'hades-run-gui']
     print(x_command)

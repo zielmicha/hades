@@ -12,9 +12,15 @@ def update_container(self):
     net = config.get('net', {})
 
     info = self.get_container_info()
+
     if info['pid']:
         for phy in net.get('wireless-phy', []):
             subprocess.call(['iw', 'phy', phy, 'set', 'netns', str(info['pid'])])
+
+    if not net.get('master'):
+        master_profile = get_net_master(self)
+        master_profile.update_container()
+        master_profile.run_command(['hades-net-update'])
 
 def ensure_veth(name, mac):
     if not os.path.exists('/sys/class/net/' + name) and not os.path.exists('/sys/class/net/' + name + 'P'):
