@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+# -*- mode: python -*-
+# Run this script in net master profile to automatically configure profile networking.
+import ipaddress
+import sys
+import tempfile
+import subprocess
+import os
+import math
+
+subprocess.check_call(['sysctl', '-q', 'net.ipv4.conf.all.rp_filter=1', 'net.ipv6.conf.all.disable_ipv6=1'])
+
+net = ipaddress.IPv4Network('10.171.0.0/24')
+local_i = 1
+
+net1, net2 = net.subnets(1)
+
+ifaces = []
+dhcp_config = ''
+
+local_ip = net.network_address + local_i
+running_profiles = [ int(i[7:]) for i in os.listdir('/sys/class/net') if i.startswith('profile') ]
+
+def octets(ip):
+    return list(ipaddress.IPv4Address(ip).packed)
+
+def netoctets(ip):
+    ip = ipaddress.IPv4Network(ip)
+    n = int(math.ceil((ip.prefixlen) / 8))
+    return [ip.prefixlen, *octets(ip.network_address)[:n]]
+
+routes = [
+    32, *octets(local_ip), *octets('0.0.0.0'),
+    *netoctets(net1), *octets(local_ip),
+    *netoctets(net2), *octets(local_ip),
+    *netoctets('0.0.0.0/0'), *octets(local_ip),
+]
+
+dhcp_config = '''
+ddns-update-style none;
+option domain-name-servers %(localip)s;
+default-lease-time 7200;
+max-lease-time 1000;
+authoritative;
+log-facility local7;
+option rfc3442-classless-static-routes code 121 = array of integer 8;
+subnet 10.171.0.0 netmask 255.255.255.0 {
+      option rfc3442-classless-static-routes %(routes)s;''' % dict(localip=str(local_ip), routes=', '.join(map(str, routes)))
+
+MAC_BASE = '76:91:df:b8:e4:'
+
+for profile_i in [0, *running_profiles]: # 0 for host
+    ifname = 'profile%d' % profile_i if profile_i != 0 else 'host'
+    remote_ip = net.network_address + profile_i if profile_i != 0 else net.network_address + (net.num_addresses - 2)
+
+    ifaces.append(ifname)
+    subprocess.check_call(['ip', 'address', 'flush', 'dev', ifname])
+    subprocess.check_call(['ip', 'link', 'set', 'dev', ifname, 'up'])
+    subprocess.check_call(['ip', 'address', 'add', 'dev', ifname, str(local_ip), 'peer', str(remote_ip)])
+
+    mac = MAC_BASE + hex(profile_i)[2:]
+
+    dhcp_fragment = '''
+      host profile%(profile_i)s {
+        hardware ethernet %(mac)s; fixed-address %(remoteip)s;
+      }''' % {'mac': mac, 'profile_i': profile_i, 'remoteip': remote_ip}
+
+    dhcp_config += dhcp_fragment
+
+with open('/etc/NetworkManager/conf.d/hades-blacklist.conf', 'w') as f:
+    f.write('[keyfile]\nunmanaged-devices=%s\n' % (','.join('iface:%s' % iface for iface in ifaces)))
+
+with open('/etc/default/isc-dhcp-server', 'w') as f:
+    f.write('INTERFACES=%s\n' % (' '.join(ifaces)))
+
+dhcp_config += '\n}\n'
+
+with open('/etc/dhcp/dhcpd.conf', 'w') as f:
+    f.write(dhcp_config)
+
+with open('/etc/dnsmasq.conf', 'w') as f:
+    f.write('bind-interfaces\nlisten-address=127.0.0.1,' + str(local_ip))
+
+subprocess.check_call('systemctl is-active -q dnsmasq || systemctl start dnsmasq', shell=True)
+
+subprocess.check_call(['systemctl', 'restart', 'isc-dhcp-server'])
+if subprocess.call(['systemctl', 'is-active', '--quiet', 'network-manager']) == 0:
+    subprocess.check_call(['systemctl', 'reload', 'network-manager'])
+
