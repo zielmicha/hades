@@ -1,0 +1,67 @@
+# based on https://github.com/mk-fg/apparmor-profiles
+#include <tunables/global>
+
+/usr/bin/pulseaudio {
+	#include <abstractions/base>
+	#include <abstractions/user-tmp>
+	#include <abstractions/audio>
+	#include <abstractions/nameservice>
+	#include <abstractions/X>
+	#include <abstractions/freedesktop.org>
+
+	/usr/@{multiarch}lib/pulse-*/modules/* m,
+	/usr/share/pulseaudio/** r,
+	/usr/lib/pulse-*/** rm,
+
+	/etc/udev/udev.conf r,
+	/run/udev/data/* r,
+
+	/tmp/pulse-* k,
+	/tmp/pulse-*/* k,
+	/run/udev/queue.bin r,
+	/run/systemd/users/* r,
+
+	owner /run/hades/pulse-michal/* rwk,
+	owner /run/user/*/pulse/* rwk,
+
+	owner @{HOME}/.config/pulse/ rwk,
+	owner @{HOME}/.config/pulse/** rwk,
+	owner @{HOME}/.esd_auth r,
+
+	owner @{PROC}/@{pid}/fd/ r,
+	owner @{PROC}/@{pid}/fd/* r,
+	owner @{PROC}/@{pid}/mountinfo r,
+
+	/sys/bus/ r,
+	/sys/class/ r,
+	/sys/class/sound/ r,
+	/sys/devices/virtual/dmi/id/*_vendor r,
+	/sys/devices/virtual/sound/** r,
+	/sys/devices/*/*/sound/** r,
+	/sys/devices/*/*/*/sound/** r,
+	# /dev/input/event* r, # module-mmkbd-evdev
+
+	network tcp,
+	network udp,
+
+	/etc/pulse/** r,
+	/etc/machine-id r,
+
+	## JACK integration via module-jack-*
+	/dev/shm/jack-*/** rw,
+	/usr/bin/bash px -> pulse_jackd_sh,
+
+	/usr/bin/pulseaudio ix,
+}
+
+# Only purpose of these is to run "jackd -l"
+profile pulse_jackd_sh {
+	#include <abstractions/base>
+	/usr/bin/bash rm,
+	deny /dev/** rw,
+	/usr/bin/jackd px -> pulse_jackd_check,
+}
+profile pulse_jackd_check {
+	#include <abstractions/base>
+	/usr/bin/jackd rm,
+}

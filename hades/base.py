@@ -20,6 +20,18 @@ def add_parsers(addf):
     sub.add_argument('user')
     sub.add_argument('profile')
 
+    sub = addf('init')
+
+def init():
+    if not os.path.isdir(core.RUN_PATH):
+        os.mkdir(core.RUN_PATH)
+
+    apparmor_path = os.path.dirname(__file__) + '/../misc/apparmor'
+    for name in os.listdir(apparmor_path):
+        path = apparmor_path + '/' + name
+        if os.path.isfile(path):
+            subprocess.check_call(['apparmor_parser', '-r', path])
+
 def init_config(profile):
     id = max(profile.get_config()['id'] for profile in core.all_profiles(profile.user)) + 1
     with_initxyz = True
@@ -45,6 +57,8 @@ def call_main(ns):
             profile.update_container()
         exit = profile.execute(ns.args)
         sys.exit(exit)
+    elif ns.command == 'init':
+        init()
     elif ns.command == 'edit':
         profile = core.Profile(user=core.User(name=ns.user), name=ns.profile)
         if ns.new and not os.path.exists(profile.config_path):

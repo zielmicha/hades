@@ -25,3 +25,6 @@ def update_container_def(self, definition):
             'source': source,
             'readonly': 'true' if (conf.get('readonly')) else 'false'
         }
+
+    for i, conf in enumerate(config.get('devices', [])):
+        definition['devices']['dev%d' % i] = {'type': conf.get('type', 'unix-block'), 'path': conf['path']}
