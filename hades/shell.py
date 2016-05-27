@@ -26,6 +26,7 @@ def add_parsers(addf): # plugin
 def run(user, session_id):
     os.environ['HADES_AS_USER'] = user.name
     os.environ['TERM'] = 'xterm' # TODO: get TERM from client
+    core.call_plugins('setup_shell_env')
 
     signal.signal(signal.SIGTSTP, signal.SIG_IGN)
     signal.signal(signal.SIGTTIN, signal.SIG_IGN)

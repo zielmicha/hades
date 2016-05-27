@@ -8,7 +8,7 @@ import subprocess
 import os
 import math
 
-subprocess.check_call(['sysctl', '-q', 'net.ipv4.conf.all.rp_filter=1', 'net.ipv6.conf.all.disable_ipv6=1'])
+subprocess.check_call(['sysctl', '-q', 'net.ipv4.conf.all.rp_filter=1', 'net.ipv6.conf.all.disable_ipv6=1', 'net.ipv4.conf.all.forwarding=1'])
 
 net = ipaddress.IPv4Network('10.171.0.0/24')
 local_i = 1
@@ -67,8 +67,9 @@ for profile_i in [0, *running_profiles]: # 0 for host
 
     dhcp_config += dhcp_fragment
 
-with open('/etc/NetworkManager/conf.d/hades-blacklist.conf', 'w') as f:
-    f.write('[keyfile]\nunmanaged-devices=%s\n' % (','.join('iface:%s' % iface for iface in ifaces)))
+if os.path.exists('/etc/NetworkManager'):
+    with open('/etc/NetworkManager/conf.d/hades-blacklist.conf', 'w') as f:
+        f.write('[keyfile]\nunmanaged-devices=%s\n' % (','.join('iface:%s' % iface for iface in ifaces)))
 
 with open('/etc/default/isc-dhcp-server', 'w') as f:
     f.write('INTERFACES=%s\n' % (' '.join(ifaces)))

@@ -14,6 +14,10 @@ def generate_xauthority(trusted):
         subprocess.check_call(['xauth', '-f', f.name, 'generate', DISPLAY_ID, 'MIT-MAGIC-COOKIE-1', 'trusted' if trusted else 'untrusted'], env=env)
         return open(f.name, 'rb').read()
 
+def setup_shell_env():
+    os.environ['XAUTHORITY'] = core.RUN_PATH + '/xauth.' + DISPLAY_ID
+    os.environ['DISPLAY'] = DISPLAY_ID
+
 def update_container(self):
     config = self.get_config()
 

@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+cd /opt/hades
+python3 -m hades.main "$@"
