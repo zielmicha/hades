@@ -6,14 +6,18 @@ from . import core
 def update_container(self):
     config = self.get_config()
 
-    if not config.get('gui'):
-        return
-
     run_path = core.RUN_PATH + '/profile-' + self.container_name
     socket_path = run_path + '/shell.socket'
+    unit_name = 'hades-shell-%s-%s.service' % (self.user.name, self.name)
+
+    if not config.get('gui'):
+        if os.path.exists(socket_path):
+            os.unlink(socket_path)
+            if subprocess.call(['systemctl', '-q', 'is-active', unit_name]):
+                subprocess.check_call(['systemctl', 'stop', unit_name])
+        return
 
     if not os.path.exists(socket_path):
-        unit_name = 'hades-shell-%s-%s.service' % (self.user.name, self.name)
         with open('/etc/systemd/system/%s' % unit_name, 'w') as f:
             f.write('''[Unit]
 Description=HadesOS shell server

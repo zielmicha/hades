@@ -1,0 +1,6 @@
+#include <tunables/global>
+
+/usr/bin/ssh-agent {
+	#include <abstractions/base>
+	owner /run/hades/profile-*/ssh-agent/** rwk,
+}

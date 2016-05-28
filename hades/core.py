@@ -190,6 +190,7 @@ def load_plugins():
     from . import initxyz
     from . import shell
     from . import base
+    from . import ssh
     plugins.append(storage)
     plugins.append(net)
     plugins.append(locale)
@@ -199,6 +200,7 @@ def load_plugins():
     plugins.append(initxyz)
     plugins.append(shell)
     plugins.append(base)
+    plugins.append(ssh)
 
 if __name__ == '__main__':
     import sys
