@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from . import core
+from . import core, common
 
 def update_container(self):
     config = self.get_config()
@@ -23,11 +23,16 @@ def update_container(self):
         print('Starting SSH agent:', ' '.join(cmd))
         subprocess.check_call(cmd, stdout=open('/dev/null', 'w'))
 
+    pubkeys = core.RUN_PATH + '/profile-' + self.container_name + '/ssh-pub/'
+    common.maybe_mkdir(pubkeys)
+
     # TODO: remove keys
     for key in config.get('ssh-keys'):
         path = os.path.join(self.user.home + '/.ssh', key)
         cmd = ['sudo', '-Hu', self.user.name, '--', 'env', 'SSH_AUTH_SOCK=' + socket_path, 'ssh-add', '--', path]
         subprocess.check_call(cmd, stderr=open('/dev/null', 'w'))
+        pubkey = subprocess.check_output(['cat', path + '.pub'])
+        common.write_file(pubkeys + os.path.basename(key) + '.pub', pubkey)
 
 def update_container_def(self, definition):
     config = self.get_config()
