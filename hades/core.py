@@ -149,6 +149,7 @@ class Profile:
             'environment.HADES_PROFILE': self.name,
             'environment.LANG': 'en_US.UTF-8', # Read /etc/default/locale? Or use PAM to set this?
             'environment.SHELL': config.get('shell', '/bin/bash'),
+            'boot.autostart': bool(config.get('autostart')),
         })
 
         definition['profiles'] = []

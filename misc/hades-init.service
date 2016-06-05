@@ -1,5 +1,6 @@
 [Unit]
 Description=hades-lock
+Conflicts=NetworkManager.service
 
 [Service]
 Type=oneshot
@@ -7,3 +8,4 @@ ExecStart=/usr/local/bin/hades init
 
 [Install]
 WantedBy=multi-user.target
+WantedBy=hades.target

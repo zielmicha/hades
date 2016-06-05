@@ -25,9 +25,6 @@ Description=HadesOS shell server
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/hades shell-server %s %s
-
-[Install]
-WantedBy=multi-user.target
 ''' % (pipes.quote(self.user.name), pipes.quote(self.name)))
         subprocess.check_call(['systemctl', 'start', unit_name])
 
