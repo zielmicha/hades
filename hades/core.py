@@ -5,6 +5,7 @@ import subprocess
 import time
 import platform
 import pwd
+import time
 
 from pylxd import api
 from .common import valid_name
@@ -27,8 +28,11 @@ class User:
         self.home = entry.pw_dir
         assert '-' not in name and valid_name(name)
 
+begin = time.time()
+
 def call_plugins(name, *args):
     for plugin in plugins:
+        #print('[%.2f]' % (time.time() - begin), name, ' ', plugin.__name__)
         if hasattr(plugin, name):
             getattr(plugin, name)(*args)
 
@@ -51,6 +55,7 @@ class Profile:
             return yaml.safe_load(f.read())
 
     def update_container(self):
+        print('Updating', self.container_name)
         if not lxd.container_defined(self.container_name):
             self.launch_container()
         self.update_definition()
