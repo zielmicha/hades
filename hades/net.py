@@ -46,7 +46,11 @@ def update_container_def(self, definition):
     net = config.get('net', {})
 
     if net.get('master'):
-        del definition['devices']['eth0']
+        try:
+            del definition['devices']['eth0']
+        except KeyError:
+            pass
+
         dev_name = 'upstream'
         ensure_veth(dev_name, mac=MAC_BASE + '0')
 

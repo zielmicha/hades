@@ -6,10 +6,16 @@ import time
 import platform
 import pwd
 
-from pylxd import api
 from .common import valid_name
 
-lxd = api.API()
+_lxd = None
+
+def lxd():
+    global _lxd
+    if _lxd == None:
+        from pylxd import api
+        _lxd = api.API()
+    return _lxd
 
 CONF_PATH = os.path.abspath(os.environ.get('HADES_CONF', 'conf'))
 RUN_PATH = os.path.abspath(os.environ.get('HADES_RUN', '/run/hades'))
@@ -51,7 +57,7 @@ class Profile:
             return yaml.safe_load(f.read())
 
     def update_container(self):
-        if not lxd.container_defined(self.container_name):
+        if not lxd().container_defined(self.container_name):
             self.launch_container()
         self.update_definition()
         self.start_container()
@@ -61,14 +67,14 @@ class Profile:
         call_plugins('update_container', self)
 
     def is_running(self):
-        return lxd.container_running(self.container_name)
+        return lxd().container_running(self.container_name)
 
     def start_container(self):
-        if not lxd.container_running(self.container_name):
-            lxd.container_start(self.container_name, timeout=15)
+        if not lxd().container_running(self.container_name):
+            lxd().container_start(self.container_name, timeout=15)
 
         for i in range(20):
-            if lxd.container_running(self.container_name):
+            if lxd().container_running(self.container_name):
                 return
             time.sleep(0.5)
         raise ValueError('failed to start container %s' % self.container_name)
@@ -80,14 +86,14 @@ class Profile:
         subprocess.check_call(['lxc', 'init', '--', config['template'], self.container_name])
 
         for i in range(10):
-            if lxd.container_defined(self.container_name):
+            if lxd().container_defined(self.container_name):
                 return
             time.sleep(0.5)
 
     def update_inner_user(self):
         config = self.get_config()
 
-        passwd = lxd.get_container_file(self.container_name, '/etc/passwd').decode('utf8')
+        passwd = lxd().get_container_file(self.container_name, '/etc/passwd').decode('utf8')
         users = [ line.split(':')[0] for line in passwd.splitlines() ]
 
         if 'ubuntu' in users:
@@ -108,7 +114,7 @@ class Profile:
     def update_hostname(self):
         hostname = platform.node()
         self.run_command(['hostname', '--', hostname])
-        hosts = lxd.get_container_file(self.container_name, '/etc/hosts').decode('utf8')
+        hosts = lxd().get_container_file(self.container_name, '/etc/hosts').decode('utf8')
         hosts = '\n'.join([ line for line in hosts.splitlines() if not '# HADES HOSTNAME' in line ])
         self.put_file('/etc/hosts', '127.0.0.1   ' + hostname + ' # HADES HOSTNAME\n' + hosts)
 
@@ -119,10 +125,10 @@ class Profile:
         with tempfile.NamedTemporaryFile() as f:
             f.write(data.encode('utf8') if isinstance(data, str) else data)
             f.flush()
-            lxd.put_container_file(self.container_name, f.name, path, uid=uid, gid=gid, mode=mode)
+            lxd().put_container_file(self.container_name, f.name, path, uid=uid, gid=gid, mode=mode)
 
     def update_definition(self):
-        definition = lxd.get_container_config(self.container_name)
+        definition = lxd().get_container_config(self.container_name)
         definition = {
             'name': definition['name'],
             'profiles': definition['profiles'],
@@ -167,7 +173,7 @@ class Profile:
         return subprocess.call(cmd)
 
     def get_container_info(self):
-        return lxd.container_info(self.container_name)
+        return lxd().container_info(self.container_name)
 
 def all_profiles(user):
     dir = CONF_PATH + '/profiles_' + user.name

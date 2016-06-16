@@ -23,12 +23,16 @@ def add_parser(name):
 
 call_plugins('add_parsers', add_parser)
 
-ns = parser.parse_args()
+def main():
+    ns = parser.parse_args()
 
-if hasattr(ns, 'user'):
-    check_user(ns.user)
+    if hasattr(ns, 'user'):
+        check_user(ns.user)
 
-call_plugins('call_main', ns)
+    call_plugins('call_main', ns)
 
-if ns.command not in available_commands:
-    parser.print_usage()
+    if ns.command not in available_commands:
+        parser.print_usage()
+
+if __name__ == '__main__':
+    main()

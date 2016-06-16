@@ -7,6 +7,8 @@ import subprocess
 import sys
 import signal
 import yaml
+import traceback
+import threading
 
 def call_main(ns): # plugin
     if ns.command == 'shell':
@@ -40,7 +42,15 @@ def run(user, session_id):
         print()
 
 def run_main(user, args):
-    return subprocess.call(['python3', '-m', 'hades.main', args[0], user.name] + args[1:])
+    # return subprocess.call(['python3', '-m', 'hades.main', args[0], user.name] + args[1:])
+    try:
+        from hades.main import main
+        sys.argv = ['hades', args[0], user.name] + args[1:]
+        main()
+    except SystemExit as exc:
+        return exc.args[0]
+    except BaseException:
+        traceback.print_exc()
 
 def load_settings(user):
     path = core.CONF_PATH + '/shell_%s.yml' % user.name
