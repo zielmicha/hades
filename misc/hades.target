@@ -1,0 +1,4 @@
+[Unit]
+Description=Boot into HadesOS
+Requires=basic.target lxd.service ssh.service
+AllowIsolate=yes

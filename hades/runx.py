@@ -3,6 +3,7 @@ import subprocess
 import binascii
 import os
 import time
+import pipes
 
 DISPLAY_ID = ':0'
 
@@ -26,12 +27,24 @@ def main(user):
     subprocess.call(['rm', xauth_path])
     subprocess.check_call(['xauth', '-f', xauth_path, 'add',
                      DISPLAY_ID, 'MIT-MAGIC-COOKIE-1', rand_cookie()])
-    xorg = subprocess.Popen(['X', DISPLAY_ID, '-auth', xauth_path, '-nolisten', 'tcp', '-novtswitch'])
+    xorg = subprocess.Popen(['X', DISPLAY_ID, 'vt2', '-auth', xauth_path, '-nolisten', 'tcp', '-novtswitch'])
     wait_for_x()
     with open(core.RUN_PATH + '/x11-user', 'w') as f:
         f.write(user.name + '\n')
     subprocess.check_call(x_command)
 
+def start(user):
+    unit_name = 'hades-x11-%s.service' % user.name
+    with open('/etc/systemd/system/%s' % unit_name, 'w') as f:
+        f.write('''[Unit]
+Description=HadesOS X session
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/hades runx %s
+''' % (pipes.quote(user.name)))
+
+    subprocess.check_call(['systemctl', 'start', unit_name])
 
 if __name__ == '__main__':
     import sys

@@ -5,6 +5,7 @@ import subprocess
 import time
 import platform
 import pwd
+import time
 
 from .common import valid_name
 
@@ -33,8 +34,11 @@ class User:
         self.home = entry.pw_dir
         assert '-' not in name and valid_name(name)
 
+begin = time.time()
+
 def call_plugins(name, *args):
     for plugin in plugins:
+        #print('[%.2f]' % (time.time() - begin), name, ' ', plugin.__name__)
         if hasattr(plugin, name):
             getattr(plugin, name)(*args)
 
@@ -58,6 +62,7 @@ class Profile:
 
     def update_container(self):
         if not lxd().container_defined(self.container_name):
+            print('Updating', self.container_name)
             self.launch_container()
         self.update_definition()
         self.start_container()
@@ -150,6 +155,7 @@ class Profile:
             'environment.HADES_PROFILE': self.name,
             'environment.LANG': 'en_US.UTF-8', # Read /etc/default/locale? Or use PAM to set this?
             'environment.SHELL': config.get('shell', '/bin/bash'),
+            'boot.autostart': bool(config.get('autostart')),
         })
 
         definition['profiles'] = []

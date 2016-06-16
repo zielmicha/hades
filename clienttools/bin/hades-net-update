@@ -40,7 +40,7 @@ dhcp_config = '''
 ddns-update-style none;
 option domain-name-servers %(localip)s;
 default-lease-time 7200;
-max-lease-time 1000;
+max-lease-time 10000;
 authoritative;
 log-facility local7;
 option rfc3442-classless-static-routes code 121 = array of integer 8;

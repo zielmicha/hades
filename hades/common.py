@@ -22,8 +22,9 @@ def write_file(path, data):
     with os.fdopen(fd, 'wb') as f:
         f.write(data)
 
-def add_devices(definition, pattern, uid=0, gid=0, mode=0o660):
-    devices = glob.glob(pattern)
+def add_devices(definition, patterns, uid=0, gid=0, mode=0o660):
+    devices = []
+    for pattern in patterns: devices += glob.glob(pattern)
     for dev in devices:
         definition['devices']['dev' + dev.replace('/', '--')] = {
             'type': 'unix-block' if stat.S_ISBLK(os.stat(dev).st_mode) else 'unix-char',
