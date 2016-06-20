@@ -61,7 +61,7 @@ def main(user, profile):
 
     while True:
         child, addr = sock.accept()
-        child.settimeout(5)
+        # child.settimeout(5) <- this may cause problems with passfd
         threading.Thread(target=handle_client, args=[child]).start()
 
 if __name__ == '__main__':

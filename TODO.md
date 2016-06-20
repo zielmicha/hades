@@ -1,3 +1,2 @@
-- add hostname to /etc/hosts
-- set timezone
 - LXD: adding disks at runtime mounts them rw
+- use dbus-launch to give profiles session bus 
