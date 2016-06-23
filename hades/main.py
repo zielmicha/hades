@@ -17,9 +17,9 @@ subcommands = parser.add_subparsers(dest='command')
 
 available_commands = []
 
-def add_parser(name):
+def add_parser(name, **kwargs):
     available_commands.append(name)
-    return subcommands.add_parser(name)
+    return subcommands.add_parser(name, **kwargs)
 
 call_plugins('add_parsers', add_parser)
 
