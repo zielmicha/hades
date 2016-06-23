@@ -21,17 +21,22 @@ def setup_shell_env():
 def update_container(self):
     config = self.get_config()
 
-    if not os.path.exists('/tmp/.X11-unix/X' + DISPLAY_ID[1:]):
-        # X11 not running
-        return
-
-    # TODO: restricted tokens
     if config.get('x11'):
+        self.run_command(['ln', '-sf', '/hades/run/x11/X0', '/tmp/.X11-unix/X0'])
+
         if config.get('x11') == 'unrestricted':
             xauthority = open(core.RUN_PATH + '/xauth.' + DISPLAY_ID, 'rb').read()
             self.run_command(['bash', '-c', 'shopt -s nullglob; chown %d:%d /dev/dri/* /dev/nvidia*' % (core.INTERNAL_UID, core.INTERNAL_GID)])
+
+        if not os.path.exists('/tmp/.X11-unix/X' + DISPLAY_ID[1:]):
+            # X11 not running
+            return
+
+        if config.get('x11') == 'unrestricted':
+            xauthority = open(core.RUN_PATH + '/xauth.' + DISPLAY_ID, 'rb').read()
         else:
             xauthority = generate_xauthority(trusted=False)
+
         self.put_file('/home/%s/.Xauthority' % (self.user.name), xauthority, uid=core.INTERNAL_UID, gid=core.INTERNAL_GID, mode=0o644) # FIXME: permissions
 
 def update_container_def(self, definition):
@@ -39,8 +44,8 @@ def update_container_def(self, definition):
     if config.get('x11'):
         definition['devices']['x11'] = {
             'type': 'disk',
-            'path': '/tmp/.X11-unix',
-            'source': '/tmp/.X11-unix'
+            'source': '/tmp/.X11-unix',
+            'path': '/hades/run/x11'
         }
         definition['config']['environment.DISPLAY'] = DISPLAY_ID
 

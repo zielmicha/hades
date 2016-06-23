@@ -21,6 +21,11 @@ def add_parsers(addf):
     sub.add_argument('user')
     sub.add_argument('profile')
 
+
+    sub = addf('foreach', help='Execute command in each profile of a given user.')
+    sub.add_argument('user')
+    sub.add_argument('args', nargs='+')
+
     sub = addf('login')
 
     sub = addf('init')
@@ -104,3 +109,9 @@ def call_main(ns):
             init_config(profile)
         subprocess.call(['editor', profile.config_path])
         profile.update_container()
+    elif ns.command == 'foreach':
+        for profile in core.all_profiles(core.User(name=ns.user)):
+            print(profile.name + ':')
+            if not profile.is_running():
+                profile.update_container()
+            profile.execute(ns.args)
