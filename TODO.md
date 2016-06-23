@@ -1,2 +1,3 @@
 - LXD: adding disks at runtime mounts them rw
 - use dbus-launch to give profiles session bus 
+- disable openssh password auth

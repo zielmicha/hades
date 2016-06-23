@@ -5,7 +5,7 @@ add_line() {
   grep -qF "$line" "$file" || echo "$line" >> "$file"
 }
 
-apt-get install -y apparmor-utils python3-yaml python-passfd ecryptfs-utils lxd python3-pylxd python3-pampy
+apt-get install -y apparmor-utils python3-yaml python-passfd ecryptfs-utils lxd python3-pylxd python3-pampy openssh-server
 apt-get install -y x11-xserver-utils xauth xinit pulseaudio alsa-utils # X support
 install bin/hades /usr/local/bin
 

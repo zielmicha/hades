@@ -193,6 +193,7 @@ def all_profiles(user):
     return result
 
 def load_plugins():
+    if plugins: return
     from . import storage
     from . import net
     from . import locale

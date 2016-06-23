@@ -29,7 +29,7 @@ def update_container(self):
     if config.get('x11'):
         if config.get('x11') == 'unrestricted':
             xauthority = open(core.RUN_PATH + '/xauth.' + DISPLAY_ID, 'rb').read()
-            self.run_command(['sh', '-c', 'chown %d:%d /dev/dri/* /dev/nvidia*' % (core.INTERNAL_UID, core.INTERNAL_GID)])
+            self.run_command(['bash', '-c', 'shopt -s nullglob; chown %d:%d /dev/dri/* /dev/nvidia*' % (core.INTERNAL_UID, core.INTERNAL_GID)])
         else:
             xauthority = generate_xauthority(trusted=False)
         self.put_file('/home/%s/.Xauthority' % (self.user.name), xauthority, uid=core.INTERNAL_UID, gid=core.INTERNAL_GID, mode=0o644) # FIXME: permissions
