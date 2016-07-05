@@ -3,12 +3,13 @@ import subprocess
 import pipes
 from . import core
 
-def update_container(self):
-    config = self.get_config()
+@core.update_profile.register
+def update_profile(profile):
+    config = profile.config
 
-    run_path = core.RUN_PATH + '/profile-' + self.container_name
+    run_path = core.RUN_PATH + '/profile-' + profile.full_name
     socket_path = run_path + '/shell.socket'
-    unit_name = 'hades-shell-%s-%s.service' % (self.user.name, self.name)
+    unit_name = 'hades-shell-%s-%s.service' % (profile.user.name, profile.name)
 
     if not config.get('gui'):
         if os.path.exists(socket_path):
@@ -25,19 +26,14 @@ Description=HadesOS shell server
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/hades shell-server %s %s
-''' % (pipes.quote(self.user.name), pipes.quote(self.name)))
+''' % (pipes.quote(profile.user.name), pipes.quote(profile.name)))
         subprocess.check_call(['systemctl', 'start', unit_name])
 
-def update_container_def(self, definition):
-    src_path = core.RUN_PATH + '/profile-' + self.container_name
+@core.update_configuration.register
+def update_configuration(profile, configuration):
+    src_path = core.RUN_PATH + '/profile-' + profile.full_name
     if not os.path.exists(src_path):
         os.mkdir(src_path)
-    definition['devices']['host'] = {
-        'type': 'disk', 'path': '/hades/run/host',
-        'source': src_path
-    }
-    definition['devices']['clienttools'] = {
-        'type': 'disk', 'path': '/hades/tools',
-        'source': os.path.dirname(__file__) + '/../clienttools',
-        'readonly': True
-    }
+
+    configuration.add_mount('/hades/run/host', src_path)
+    configuration.add_mount('/hades/tools', os.path.dirname(__file__) + '/../clienttools', readonly=True)

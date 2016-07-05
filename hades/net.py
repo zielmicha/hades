@@ -3,85 +3,48 @@ import os
 import subprocess
 
 from . import core
+from . import driver_lxc
 
 MAC_BASE = '76:91:df:b8:e4:'
 
-def update_container(self):
-    config = self.get_config()
+@core.update_profile.register
+def update_container(profile: core.Profile):
+    config = profile.config
 
     net = config.get('net', {})
 
-    info = self.get_container_info()
-
-    if info['pid']:
-        for phy in net.get('wireless-phy', []):
-            subprocess.call(['iw', 'phy', phy, 'set', 'netns', str(info['pid'])])
+    for phy in net.get('wireless-phy', []):
+        profile.driver.add_wireless_phy(phy)
 
     if not net.get('master'):
-        master_profile = get_net_master(self)
+        master_profile = get_net_master(profile)
+
+        if not master_profile.driver.is_running():
+            master_profile.update_container()
+
+        if interface_exists(veth_for(profile)):
+            master_profile.driver.attach_link('profile%d' % config['id'], veth_for(profile))
         master_profile.run_command(['hades-net-update'])
 
-def ensure_veth(name, mac):
-    if not os.path.exists('/sys/class/net/' + name) and not os.path.exists('/sys/class/net/' + name + 'P'):
-        subprocess.check_call(['ip', 'link', 'add', 'dev', name, 'type', 'veth', 'peer', 'name', (name + 'P')])
-        if mac:
-            subprocess.check_call(['ip', 'link', 'set', 'dev', name, 'address', mac])
-
-def veth_for(p):
-    return 'c%d-%d' % (p.user.uid, p.get_config()['id'])
-
-def get_net_master(self):
-    for profile in core.all_profiles(self.user):
-        if profile.get_config().get('net', {}).get('master'):
-            return profile
-    raise ValueError('no net master!')
-
-def move_link_to(link, pid, target_name):
-    subprocess.check_call(['ip', 'link', 'set', 'dev', link, 'netns', '%d' % pid, 'name', target_name])
-
-def update_container_def(self, definition):
-    config = self.get_config()
+@core.update_configuration.register
+def update_configuration(profile, configuration):
+    config = profile.config
 
     net = config.get('net', {})
 
     if net.get('master'):
+        assert isinstance(profile.driver, driver_lxc.LxcDriver), 'net master must be using LXC driver'
+
         try:
-            del definition['devices']['eth0']
+            del configuration.definition['devices']['eth0']
         except KeyError:
             pass
 
-        dev_name = 'upstream'
-        ensure_veth(dev_name, mac=MAC_BASE + '0')
-
-        definition['devices']['host-dev'] = {
-            'type': 'nic',
-            'nictype': 'physical',
-            'name': 'host',
-            'parent': dev_name + 'P',
-        }
+        configuration.add_p2p_netdev(name='host', source='upstream', mac=MAC_BASE + '0')
     else:
         # TODO: moving interfaces should happen in update_container
-        dev_name = veth_for(self)
-        info = self.get_container_info()
-        id = self.get_config()['id']
-        if 'eth0' not in (info['network'] or {}):
-            # interface may not exist yet, but if it exists it is in root namespace
-            ensure_veth(dev_name, mac=MAC_BASE + str(hex(id)))
-
-        target_dev = 'profile%d' % id
-        master_profile = get_net_master(self)
-        if not master_profile.is_running():
-            master_profile.update_container()
-        master_info = master_profile.get_container_info()
-        if target_dev not in master_info['network']:
-            move_link_to(dev_name + 'P', master_info['pid'], target_dev)
-
-        definition['devices']['eth0'] = {
-            'type': 'nic',
-            'nictype': 'physical',
-            'name': 'eth0',
-            'parent': dev_name
-        }
+        dev_name = veth_for(profile)
+        configuration.add_p2p_netdev(name='eth0', source=dev_name, mac=MAC_BASE + str(hex(config['id'])))
 
     for iface in net.get('raw', []):
         definition['devices']['host-raw-%s' % iface] = {
@@ -90,3 +53,16 @@ def update_container_def(self, definition):
             'name': iface,
             'parent': iface
         }
+
+def veth_for(p):
+    return 'c%d-%d' % (p.user.uid, p.config['id'])
+
+def interface_exists(name):
+    return os.path.exists('/sys/class/net/' + name)
+
+def get_net_master(profile):
+    for profile in core.all_profiles(profile.user):
+        if profile.config.get('net', {}).get('master'):
+            return profile
+
+    raise ValueError('no net master!')

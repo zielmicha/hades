@@ -1,12 +1,10 @@
 from . import core
-from . import main
 import sys
 import subprocess
 import os
 import yaml
 import getpass
 
-@main.add_parsers.register
 def add_parsers(addf):
     sub = addf('exec')
     sub.add_argument('--update', action='store_true', default=False)
@@ -92,13 +90,12 @@ def login():
     except (KeyboardInterrupt, EOFError):
         pass
 
-@main.call_main.register
 def call_main(ns):
     if ns.command == 'update':
-        core.Profile(user=core.User(name=ns.user), name=ns.profile).update()
+        core.Profile(user=core.User(name=ns.user), name=ns.profile).update_container()
     elif ns.command == 'exec':
         profile = core.Profile(user=core.User(name=ns.user), name=ns.profile)
-        if ns.update or not profile.driver.is_running():
+        if ns.update or not profile.is_running():
             profile.update_container()
         exit = profile.execute(ns.args)
         sys.exit(exit)
@@ -111,10 +108,9 @@ def call_main(ns):
         if ns.new and not os.path.exists(profile.config_path):
             init_config(profile)
         subprocess.call(['editor', profile.config_path])
-        profile.update()
+        profile.update_container()
     elif ns.command == 'foreach':
         for profile in core.all_profiles(core.User(name=ns.user)):
-            print(profile.name + ':')
-            if not profile.is_running():
+            print(profile.name +         if not profile.is_running():
                 profile.update_container()
             profile.execute(ns.args)

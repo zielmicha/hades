@@ -2,9 +2,10 @@ import tempfile
 import os
 import subprocess
 
-from . import core, common
+from . import core, common, shell
 
-DISPLAY_ID = ':0'
+DISPLAY_NUM = 0
+DISPLAY_ID = ':%d'
 
 def generate_xauthority(trusted):
     with tempfile.NamedTemporaryFile() as f:
@@ -14,19 +15,23 @@ def generate_xauthority(trusted):
         subprocess.check_call(['xauth', '-f', f.name, 'generate', DISPLAY_ID, 'MIT-MAGIC-COOKIE-1', 'trusted' if trusted else 'untrusted', 'timeout', '31536000'], env=env)
         return open(f.name, 'rb').read()
 
+@shell.setup_shell_env.register
 def setup_shell_env():
     os.environ['XAUTHORITY'] = core.RUN_PATH + '/xauth.' + DISPLAY_ID
     os.environ['DISPLAY'] = DISPLAY_ID
 
-def update_container(self):
-    config = self.get_config()
+@core.update_profile.register
+def update_container(profile):
+    config = profile.config
 
     if config.get('x11'):
-        self.run_command(['ln', '-sf', '/hades/run/x11/X0', '/tmp/.X11-unix/X0'])
+        profile.run_command(['ln', '-sf', '/hades/run/x11/X%d' % DISPLAY_NUM, '/tmp/.X11-unix/X%d' % DISPLAY_NUM])
 
         if config.get('x11') == 'unrestricted':
             xauthority = open(core.RUN_PATH + '/xauth.' + DISPLAY_ID, 'rb').read()
-            self.run_command(['bash', '-c', 'shopt -s nullglob; chown %d:%d /dev/dri/* /dev/nvidia*' % (core.INTERNAL_UID, core.INTERNAL_GID)])
+
+            # TODO: only makes sense for LXC driver
+            profile.run_command(['bash', '-c', 'shopt -s nullglob; chown %d:%d /dev/dri/* /dev/nvidia*' % (core.INTERNAL_UID, core.INTERNAL_GID)])
 
         if not os.path.exists('/tmp/.X11-unix/X' + DISPLAY_ID[1:]):
             # X11 not running
@@ -37,23 +42,18 @@ def update_container(self):
         else:
             xauthority = generate_xauthority(trusted=False)
 
-        self.put_file('/home/%s/.Xauthority' % (self.user.name), xauthority, uid=core.INTERNAL_UID, gid=core.INTERNAL_GID, mode=0o644) # FIXME: permissions
+        profile.put_file('%s/.Xauthority' % (self.user.home), xauthority, uid=core.INTERNAL_UID, gid=core.INTERNAL_GID, mode=0o644) # FIXME: permissions
 
-def update_container_def(self, definition):
-    config = self.get_config()
+@core.update_configuration.register
+def update_configuration(profile, configuration):
+    config = profile.config
     if config.get('x11'):
-        definition['devices']['x11'] = {
-            'type': 'disk',
-            'source': '/tmp/.X11-unix',
-            'path': '/hades/run/x11'
-        }
-        definition['config']['environment.DISPLAY'] = DISPLAY_ID
+        configuration.add_mount('/hades/run/x11', '/tmp/.X11-unix')
+        configuration.add_env('DISPALY', DISPLAY_ID)
 
         if config.get('x11') == 'unrestricted':
-            common.add_devices(definition, ['/dev/dri/*', '/dev/nvidia*'],
-                               uid=0,
-                               gid=0,
-                               mode=0o660) # assigning UID is broken in LXD (for users in raw uidmaps)
+            configuration.add_devices(['/dev/dri/*', '/dev/nvidia*'],
+                                      mode=0o660) # assigning UID is broken in LXD (for users in raw uidmaps)
 
 def add_parsers(addf):
     sub = addf('runx')

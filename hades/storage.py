@@ -6,25 +6,18 @@ def expanduser(self, path):
     else:
         return path
 
-def update_container(self):
-    config = self.get_config()
-
-def update_container_def(self, definition):
-    config = self.get_config()
+@core.update_configuration.register
+def update_configuration(profile, configuration):
+    config = profile.config
     for i, conf in enumerate(config.get('files', [])):
-        path = expanduser(self, conf['path'])
+        path = expanduser(profile, conf['path'])
         source = conf.get('source')
         if source:
             source = expanduser(self, source)
         else:
             source = path
 
-        definition['devices']['files%d' % i] = {
-            'type': 'disk',
-            'path': path,
-            'source': source,
-            'readonly': 'true' if (conf.get('readonly')) else 'false'
-        }
+        configuration.add_mount(path, source, bool(conf.get('readonly')))
 
-    for i, conf in enumerate(config.get('devices', [])):
-        definition['devices']['dev%d' % i] = {'type': conf.get('type', 'unix-block'), 'path': conf['path']}
+    for conf in config.get('devices', []):
+        configuration.add_block_device(conf['path'], conf['path'])

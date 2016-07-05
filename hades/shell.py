@@ -1,4 +1,6 @@
 from . import core
+from . import main
+from .common import Observable
 
 import shlex
 import readline
@@ -10,13 +12,17 @@ import yaml
 import traceback
 import threading
 
-def call_main(ns): # plugin
+setup_shell_env = Observable()
+
+@main.call_main.register
+def call_main(ns):
     if ns.command == 'shell':
         run(core.User(name=ns.user), ns.session_id)
     elif ns.command == 'shell-server':
         os.execvp('python2', ['python2', '-m', 'hades.shell_server', ns.user, ns.profile])
 
-def add_parsers(addf): # plugin
+@main.add_parsers.register
+def add_parsers(addf):
     sub = addf('shell')
     sub.add_argument('user')
     sub.add_argument('--session-id', default=None)
@@ -28,7 +34,7 @@ def add_parsers(addf): # plugin
 def run(user, session_id):
     os.environ['HADES_AS_USER'] = user.name
     os.environ['TERM'] = 'xterm' # TODO: get TERM from client
-    core.call_plugins('setup_shell_env')
+    setup_shell_env.call()
 
     signal.signal(signal.SIGTSTP, signal.SIG_IGN)
     signal.signal(signal.SIGTTIN, signal.SIG_IGN)
