@@ -4,6 +4,8 @@ import tempfile
 import binascii
 import time
 import glob
+import stat
+import os
 
 from . import core
 
@@ -149,7 +151,7 @@ class LxcReconfigurator:
         devices = []
         for pattern in patterns: devices += glob.glob(pattern)
         for dev in devices:
-            self.definition['devices']['dev' + binascii.hexlify(dev).decode()] = {
+            self.definition['devices']['dev' + binascii.hexlify(dev.encode()).decode()] = {
                 'type': 'unix-block' if stat.S_ISBLK(os.stat(dev).st_mode) else 'unix-char',
                 'path': dev,
                 'uid': uid,
@@ -157,15 +159,18 @@ class LxcReconfigurator:
                 'mode': oct(mode)[2:]
             }
 
-    def add_block_device(self, path, source):
-        self.definition['devices']['dev' + binascii.hexlify(path).decode()] = {
-            'type': 'unix-block',
+    def add_block_device(self, path, source, uid=0, gid=0, mode=0o666, _type=None):
+        self.definition['devices']['dev' + binascii.hexlify(path.encode()).decode()] = {
+            'type': _type or 'unix-block',
             'path': path,
-            'source': path,
+            # 'source': path, TODO - get minor, major
             'uid': uid,
             'gid': gid,
             'mode': oct(mode)[2:]
         }
+
+    def add_serial_device(self, path, source, uid=0, gid=0, mode=0o666):
+        self.add_block_device(path, source, uid, gid, mode, _type='unix-char')
 
     def add_host_netdev(self, name, source, mac):
         self.definition['devices']['netdev-' + name] = {

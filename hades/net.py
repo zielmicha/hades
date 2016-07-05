@@ -20,7 +20,7 @@ def update_container(profile: core.Profile):
         master_profile = get_net_master(profile)
 
         if not master_profile.driver.is_running():
-            master_profile.update_container()
+            master_profile.update()
 
         if interface_exists(veth_for(profile)):
             master_profile.driver.attach_link('profile%d' % config['id'], veth_for(profile))
@@ -44,15 +44,10 @@ def update_configuration(profile, configuration):
     else:
         # TODO: moving interfaces should happen in update_container
         dev_name = veth_for(profile)
-        configuration.add_p2p_netdev(name='eth0', source=dev_name, mac=MAC_BASE + str(hex(config['id'])))
+        configuration.add_p2p_netdev(name='eth0', source=dev_name, mac=MAC_BASE + str(hex(config['id']))[2:])
 
     for iface in net.get('raw', []):
-        definition['devices']['host-raw-%s' % iface] = {
-            'type': 'nic',
-            'nictype': 'physical',
-            'name': iface,
-            'parent': iface
-        }
+        configuration.add_host_netdev(iface, iface, mac=None)
 
 def veth_for(p):
     return 'c%d-%d' % (p.user.uid, p.config['id'])

@@ -1,4 +1,5 @@
 from . import core
+import stat, os
 
 def expanduser(self, path):
     if path.startswith('~/'):
@@ -13,11 +14,15 @@ def update_configuration(profile, configuration):
         path = expanduser(profile, conf['path'])
         source = conf.get('source')
         if source:
-            source = expanduser(self, source)
+            source = expanduser(profile, source)
         else:
             source = path
 
         configuration.add_mount(path, source, bool(conf.get('readonly')))
 
     for conf in config.get('devices', []):
-        configuration.add_block_device(conf['path'], conf['path'])
+        dev = conf['path']
+        if stat.S_ISBLK(os.stat(dev).st_mode):
+            configuration.add_block_device(conf['path'], conf['path'])
+        else:
+            configuration.add_serial_device(conf['path'], conf['path'])

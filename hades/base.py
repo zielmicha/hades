@@ -43,7 +43,7 @@ def init():
             subprocess.check_call(['apparmor_parser', '-r', path])
 
 def init_config(profile):
-    id = max(profile.get_config()['id'] for profile in core.all_profiles(profile.user)) + 1
+    id = max(profile.config['id'] for profile in core.all_profiles(profile.user)) + 1
     with_initxyz = True
     config = {
         'id': id,
@@ -99,7 +99,7 @@ def call_main(ns):
     elif ns.command == 'exec':
         profile = core.Profile(user=core.User(name=ns.user), name=ns.profile)
         if ns.update or not profile.driver.is_running():
-            profile.update_container()
+            profile.update()
         exit = profile.execute(ns.args)
         sys.exit(exit)
     elif ns.command == 'init':

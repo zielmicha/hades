@@ -2,10 +2,10 @@ import tempfile
 import os
 import subprocess
 
-from . import core, common, shell
+from . import core, common, shell, main
 
 DISPLAY_NUM = 0
-DISPLAY_ID = ':%d'
+DISPLAY_ID = ':%d' % DISPLAY_NUM
 
 def generate_xauthority(trusted):
     with tempfile.NamedTemporaryFile() as f:
@@ -42,7 +42,7 @@ def update_container(profile):
         else:
             xauthority = generate_xauthority(trusted=False)
 
-        profile.put_file('%s/.Xauthority' % (self.user.home), xauthority, uid=core.INTERNAL_UID, gid=core.INTERNAL_GID, mode=0o644) # FIXME: permissions
+        profile.driver.put_file('%s/.Xauthority' % (profile.user.home), xauthority, uid=core.INTERNAL_UID, gid=core.INTERNAL_GID, mode=0o644) # FIXME: permissions
 
 @core.update_configuration.register
 def update_configuration(profile, configuration):
@@ -55,6 +55,7 @@ def update_configuration(profile, configuration):
             configuration.add_devices(['/dev/dri/*', '/dev/nvidia*'],
                                       mode=0o660) # assigning UID is broken in LXD (for users in raw uidmaps)
 
+@main.add_parsers.register
 def add_parsers(addf):
     sub = addf('runx')
     sub.add_argument('user')
@@ -70,6 +71,7 @@ def get_gui_user():
     username = open(core.RUN_PATH + '/x11-user', 'r').read().strip()
     return core.User(username)
 
+@main.call_main.register
 def call_main(ns):
     if ns.command == 'runx':
         from . import runx
