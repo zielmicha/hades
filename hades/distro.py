@@ -22,8 +22,8 @@ class CommonDistro:
             # self.run_command(['groupdel', 'ubuntu'])
 
         if self.user.name not in users:
-            self.profile.run_command(['groupadd', '--gid', str(INTERNAL_GID), self.user.name])
-            self.profile.run_command(['useradd', '--create-home', '--uid', str(INTERNAL_UID), '--gid', str(INTERNAL_GID), self.user.name])
+            self.profile.run_command(['groupadd', '--gid', str(core.INTERNAL_GID), self.user.name])
+            self.profile.run_command(['useradd', '--create-home', '--uid', str(core.INTERNAL_UID), '--gid', str(core.INTERNAL_GID), self.user.name])
 
         self.profile.run_command(['chsh', '--shell', config.get('shell', '/bin/bash'), self.user.name])
         self.profile.run_command(['chown', '%d:%d' % (core.INTERNAL_UID, core.INTERNAL_GID), '--', self.user.home])

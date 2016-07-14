@@ -34,10 +34,14 @@ class LxcDriver:
     def is_running(self):
         return lxd().container_running(self.container_name)
 
-    def start(self):
+    def _ensure_exists(self):
         if not lxd().container_defined(self.container_name):
             print('Updating', self.container_name)
             self._launch_container()
+
+
+    def start(self):
+        self._ensure_exists()
 
         if not lxd().container_running(self.container_name):
             lxd().container_start(self.container_name, timeout=15)
@@ -65,6 +69,7 @@ class LxcDriver:
         return subprocess.call(['lxc', 'exec', self.container_name, '--'] + args)
 
     def reconfigure(self) -> 'LxcReconfigurator':
+        self._ensure_exists()
         return LxcReconfigurator(self)
 
     def attach_wireless_phy(self, name):

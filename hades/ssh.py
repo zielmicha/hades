@@ -42,4 +42,4 @@ def update_configuration(profile, configuration):
     if not config.get('ssh-keys'):
         return
 
-    configuration.add_env('environment.SSH_AUTH_SOCK', '/hades/run/host/ssh-agent/agent.socket')
+    configuration.add_env('SSH_AUTH_SOCK', '/hades/run/host/ssh-agent/agent.socket')

@@ -115,6 +115,6 @@ def call_main(ns):
     elif ns.command == 'foreach':
         for profile in core.all_profiles(core.User(name=ns.user)):
             print(profile.name + ':')
-            if not profile.is_running():
-                profile.update_container()
+            if not profile.driver.is_running():
+                profile.update()
             profile.execute(ns.args)

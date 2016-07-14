@@ -81,6 +81,6 @@ def call_main(ns):
         runx.start(core.User(name=ns.user))
     elif ns.command == 'guiexec':
         profile = core.Profile(user=get_gui_user(), name='gui')
-        if ns.update or not profile.is_running():
-            profile.update_container()
+        if ns.update or not profile.driver.is_running():
+            profile.update()
         profile.execute(ns.args)
