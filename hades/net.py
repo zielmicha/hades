@@ -14,7 +14,7 @@ def update_container(profile: core.Profile):
     net = config.get('net', {})
 
     for phy in net.get('wireless-phy', []):
-        profile.driver.add_wireless_phy(phy)
+        profile.driver.attach_wireless_phy(phy)
 
     if not net.get('master'):
         master_profile = get_net_master(profile)
@@ -56,7 +56,7 @@ def interface_exists(name):
     return os.path.exists('/sys/class/net/' + name)
 
 def get_net_master(profile):
-    for profile in core.all_profiles(profile.user):
+    for profile in core.all_profiles(None):
         if profile.config.get('net', {}).get('master'):
             return profile
 

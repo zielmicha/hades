@@ -80,7 +80,7 @@ with open('/etc/dhcp/dhcpd.conf', 'w') as f:
     f.write(dhcp_config)
 
 with open('/etc/dnsmasq.conf', 'w') as f:
-    f.write('bind-interfaces\nlisten-address=127.0.0.1,' + str(local_ip))
+    f.write('no-resolv\nserver=8.8.8.8\nserver=8.8.4.4\nbind-interfaces\nlisten-address=127.0.0.1,' + str(local_ip))
 
 subprocess.check_call('systemctl is-active -q dnsmasq || systemctl start dnsmasq', shell=True)
 

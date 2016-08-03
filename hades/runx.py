@@ -1,17 +1,15 @@
-from . import core
+from . import core, x11
 import subprocess
 import binascii
 import os
 import time
 import pipes
 
-DISPLAY_ID = ':0'
-
 def rand_cookie():
     return binascii.hexlify(os.urandom(16)).decode()
 
-def wait_for_x():
-    path = '/tmp/.X11-unix/X' + DISPLAY_ID[1:]
+def wait_for_x(user):
+    path = '/tmp/.X11-unix/X%d' % x11.get_display_num(user)
     for i in range(30):
         if os.path.exists(path):
             break
@@ -21,16 +19,14 @@ def wait_for_x():
 
 def main(user):
     subprocess.call(['mkdir', '/run/hades'])
-    xauth_path = core.RUN_PATH + '/xauth.' + DISPLAY_ID
+    xauth_path = core.RUN_PATH + '/xauth.' + x11.get_display_id(user)
     x_command = ['python3', '-m', 'hades.main', 'exec', '--update', user.name, 'gui', 'hades-run-gui']
     print(x_command)
     subprocess.call(['rm', xauth_path])
     subprocess.check_call(['xauth', '-f', xauth_path, 'add',
-                     DISPLAY_ID, 'MIT-MAGIC-COOKIE-1', rand_cookie()])
-    xorg = subprocess.Popen(['X', DISPLAY_ID, 'vt2', '-audit', '4', '-auth', xauth_path, '-nolisten', 'tcp', '-novtswitch'])
-    wait_for_x()
-    with open(core.RUN_PATH + '/x11-user', 'w') as f:
-        f.write(user.name + '\n')
+                     x11.get_display_id(user), 'MIT-MAGIC-COOKIE-1', rand_cookie()])
+    xorg = subprocess.Popen(['X', x11.get_display_id(user), 'vt%d' % (x11.get_display_num(user) + 2), '-audit', '4', '-auth', xauth_path, '-nolisten', 'tcp', '-novtswitch'])
+    wait_for_x(user)
     subprocess.check_call(x_command)
 
 def start(user):

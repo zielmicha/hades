@@ -76,7 +76,21 @@ class Profile:
     def execute(self, *args, **kwargs):
         return self.distro.execute(*args, **kwargs)
 
+def all_users():
+    result = []
+    for name in os.listdir(CONF_PATH):
+        if name.startswith('profiles_'):
+            user_name = name[len('profiles_'):]
+            result.append(User(user_name))
+    return result
+
 def all_profiles(user):
+    if not user:
+        result = []
+        for user in all_users():
+            result += all_profiles(user)
+        return result
+
     dir = CONF_PATH + '/profiles_' + user.name
     names = os.listdir(dir)
     result = []

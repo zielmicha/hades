@@ -21,6 +21,6 @@ install -m0644 misc/hades-init.service /etc/systemd/system/
 systemctl enable hades-init.service
 
 add_line /etc/subuid root:200000:1
-add_line /etc/subuid root:1000:1
+add_line /etc/subuid root:1000:1000
 add_line /etc/subgid root:200000:1
-add_line /etc/subgid root:1000:1
+add_line /etc/subgid root:1000:1000
