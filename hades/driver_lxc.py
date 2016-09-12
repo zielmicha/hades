@@ -117,6 +117,8 @@ class LxcReconfigurator:
             'environment.HADES_PROFILE': self.profile.name,
             'environment.LANG': 'en_US.UTF-8', # TODO: Read /etc/default/locale? Or use PAM to set this?
             'environment.SHELL': '/bin/zsh', # TODO
+            'linux.kernel_modules': 'overlay, nf_nat',
+            'security.nesting': 'true'
         })
 
         self.definition['profiles'] = []
@@ -126,6 +128,7 @@ class LxcReconfigurator:
             # 'eth0': {'name': 'eth0', 'nictype': 'bridged', 'parent': 'lxdbr0', 'type': 'nic'},
 
             # give container a few useful devices, they anyway won't be usable without "sudo: allow"
+            'apparmorfix': {'path': '/sys/module/apparmor/parameters/enabled', 'type': 'disk', 'source': '/dev/null'},
             'tun': {'type': 'unix-char', 'path': '/dev/net/tun'},
             'kvm': {'type': 'unix-char', 'path': '/dev/kvm'},
             'fuse': {'type': 'unix-char', 'path': '/dev/fuse'}, # requires kernel patch to support user ns
