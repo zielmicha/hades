@@ -189,7 +189,7 @@ class LxcReconfigurator:
             'hwaddr': mac
         }
 
-    def add_p2p_netdev(self, name, source, mac):
+    def add_p2p_netdev(self, name, source, mac=None):
         self.definition['devices']['netdev-' + name] = {
             'type': 'nic',
             'nictype': 'p2p',
