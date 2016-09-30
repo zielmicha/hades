@@ -28,6 +28,7 @@ begin = time.time()
 
 create_distro = Observable(need_return=True)
 create_driver = Observable(need_return=True)
+ensure_not_running = Observable()
 update_profile = Observable()
 update_configuration = Observable()
 

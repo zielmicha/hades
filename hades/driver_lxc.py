@@ -23,6 +23,13 @@ def _create_driver(name, profile):
     if name == 'lxc':
         return LxcDriver(profile)
 
+@core.ensure_not_running.register
+def _ensure_not_running(except_driver, profile):
+    if except_driver != 'lxc':
+        profile = LxcDriver(self.profile)
+        if profile.is_running():
+            profile.stop()
+
 class LxcDriver:
     def __init__(self, profile):
         self.profile = profile
@@ -39,7 +46,6 @@ class LxcDriver:
             print('Updating', self.container_name)
             self._launch_container()
 
-
     def start(self):
         self._ensure_exists()
 
@@ -52,6 +58,9 @@ class LxcDriver:
             time.sleep(0.5)
 
         raise Exception('failed to start container %s' % self.container_name)
+
+    def stop(self):
+        subprocess.check_call(['lxc', 'stop', '--force', self.container_name])
 
     def get_file(self, path: str) -> bytes:
         return lxd().get_container_file(self.container_name, path)
