@@ -1,0 +1,14 @@
+uid_map: |
+  0 100000 65536
+  200000 1000 1
+gid_map: |
+  0 100000 65536
+  200000 1000 1
+memory: 1G
+
+netdevs:
+- host_name: tapvm
+  hwaddr: fe:7d:65:2d:bf:d0
+
+disks:
+  "/": {source: /var/lib/lxd/containers/michal-misc/rootfs, readonly: true}

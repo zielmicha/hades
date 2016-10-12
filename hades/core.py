@@ -48,7 +48,7 @@ class Profile:
 
     @cached_property
     def driver(self):
-        return create_driver.call(self.config.get('distro', 'lxc'), self)
+        return create_driver.call(self.config.get('driver', 'lxc'), self)
 
     @property
     def config_path(self):
@@ -106,7 +106,7 @@ def all_profiles(user):
 def load_plugins():
     from . import (
         storage, net, locale, x11, shell_launcher, sound, initxyz, shell, base, ssh,
-        distro_debian, driver_lxc,
+        distro_debian, driver_lxc, driver_kvm
     )
 
 if __name__ == '__main__':

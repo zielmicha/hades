@@ -1,14 +1,17 @@
-import ctypes, subprocess, os, time, traceback
+import ctypes, subprocess, os, time, traceback, errno
 
-libc = ctypes.CDLL('libc.so.6')
+libc = ctypes.CDLL('libc.so.6', use_errno=True)
 CLONE_NEWUSER = 0x10000000
 
 def _userns_child(unshared_pipe, ready_pipe, func):
     if libc.unshare(CLONE_NEWUSER) != 0:
-        raise OSError('unshare(CLONE_NEWUSER) failed')
+        raise OSError('unshare(CLONE_NEWUSER) failed (code: %s)' % errno.errorcode[ctypes.get_errno()])
+
+    print('unshared!')
 
     unshared_pipe[1].write(b'0')
-    ready_pipe[0].read(1)
+    b = ready_pipe[0].read(1)
+    if not b: raise Exception('parent died')
 
     os.setgid(0)
     os.setuid(0)
@@ -32,7 +35,9 @@ def spawn_in_userns(uid_map, gid_map, func):
         finally:
             os._exit(0)
     else:
-        unshared_pipe[0].read(1)
+        unshared_pipe[1].close()
+        b = unshared_pipe[0].read(1)
+        if not b: raise Exception('child died')
 
         with open('/proc/%d/uid_map' % pid, 'w') as w:
             w.write(uid_map)

@@ -1,7 +1,8 @@
+from typing import Tuple
 import os, socket, subprocess, time, fcntl
 from . import userns
 
-def run(memory, uid_map, gid_map, rootfs_path):
+def run(memory, uid_map, gid_map, rootfs_path, args) -> subprocess.Popen:
     virtfs_sock, helper_pid = launch_virtfs_helper(uid_map, gid_map, rootfs_path)
 
     cmd = [
@@ -13,13 +14,9 @@ def run(memory, uid_map, gid_map, rootfs_path):
             virtfs_sock.fileno(), rootfs_path),
         '-device', 'virtio-9p-pci,fsdev=root,mount_tag=/dev/root',
         '-append', 'root=/dev/root ro rootfstype=9p rootflags=trans=virtio,version=9p2000.L console=ttyS0 init=/sbin/init',
-        '-nographic']
-    print(cmd)
+        '-nographic'] + args
 
-    try:
-        subprocess.check_call(cmd, pass_fds=[virtfs_sock.fileno()])
-    finally:
-        os.kill(helper_pid, 15)
+    return subprocess.Popen(cmd, pass_fds=[virtfs_sock.fileno()])
 
 def launch_virtfs_helper(uid_map, gid_map, path):
     sockpair = socket.socketpair(socket.AF_UNIX)
